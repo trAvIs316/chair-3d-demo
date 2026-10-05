@@ -1,0 +1,48 @@
+name: Deploy 3D Chair to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下載專案代碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js 環境
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 執行 Vite 打包 (編譯 Vue + 複製 .glb)
+        run: npm run build
+
+      - name: 設定 Pages 產物
+        uses: actions/configure-pages@v4
+
+      - name: 上傳打包資料夾
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: 發布至 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
